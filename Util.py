@@ -79,26 +79,35 @@ def formatFinalBufferintoDataFrame(_readingBuffer):
     return _df
 
 
-def trajectory_generation(arduino, _traj_index, _traj_len, _traj_data, _stop_event,_traj_period = 0.1):
+def trajectory_generation(arduino, _traj_index, _traj_len, _traj_data, _stop_event,_traj_period = 0.2):
 
+    missed_frames = 0
     while not _stop_event.is_set():
-        next_call = time.time()
+        next_call = time.time() + _traj_period
 
-        write(arduino,f"traj={datetime.datetime.now().time()};{_traj_data.Setpoint[_traj_index]}\r\n")
+        # Vider le buffer d'entrée du port série
+        arduino.reset_input_buffer()
 
-        next_call = next_call + _traj_period
-        if _traj_index < _traj_len:
-            _traj_index = _traj_index + 10 * _traj_period
+        # Envoyer la trame à l'Arduino
+        write(arduino, f"traj={datetime.datetime.now().time()};{_traj_data.Setpoint[_traj_index]}\r\n")
+
+        _next_index = _traj_index + 10 * _traj_period
+        if _next_index <= _traj_len: #On continue si on n'a pas dépassé la fin du tableau
+            _traj_index = _next_index
         else:
-            _traj_index = 0
+            _traj_index = 0 #Fin de la génération
             break
 
         time_sleep = next_call - time.time()
         if time_sleep > 0 :
             time.sleep(time_sleep)
         else:
-            print("!! Warning, time frame missed !!")
+            missed_frames = missed_frames + 1
 
+
+    #Print du nombre de frames maquées
+    if missed_frames > 0:
+        print(f"!! Warning: {missed_frames} time frame missed !!")
 
 def write(arduino,x):
     #print("ArduinoSend:"+x)

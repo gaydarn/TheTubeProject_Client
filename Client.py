@@ -116,6 +116,7 @@ def appStandalone(arduino_Auto,  readingBuffer):
 
     TrajData = Util.LoadDataFile(combobox_TrajChoice.get())
 
+    #Affichage de la lecture de la trajectoire désactivée
     TrajData.plot()
     TrajLen = TrajData.size - 1
     plt.show()
